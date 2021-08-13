@@ -1,19 +1,19 @@
-##Cookie Attributes
-###Path
+## Cookie Attributes
+### Path
 - Think of this as the "minimum prefix" that needs to match the request URI for the cookie to be sent with a request. Examples:
     - Cookie path `/` matches requests for all paths.
     - Cookie path `/foo` matches requests for `/foo` and `/foo/bar`, `/foo/bar/baz`.
 - Cookies can be set with a different path than the path of the current page.
 - Multiple cookies with the same name for the same domain but different paths can co-exist in the cookie jar, and will all be sent in requests from Chrome and Firefox.
 
-####Example
+#### Example
 ```
 document.cookie = "ACOOKIE=a;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/;SameSite=None;Secure";
 document.cookie = "ACOOKIE=foo;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/foo;SameSite=None;Secure";
 document.cookie = "ACOOKIE=foobar;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/foo/bar;SameSite=None;Secure";
 ```
 
-#####Request
+##### Request
 ```
 GET /foo/bar HTTP/1.1
 ...
@@ -44,7 +44,7 @@ ACOOKIE=a
 ```
 
 
-###Domain
+### Domain
 - The Domain attribute specifies which hosts a user agent may send the cookie to.
 - If Domain is unspecified, it defaults to the same host that set the cookie, excluding subdomains.
 - If Domain is specified, then subdomains are always included. Example:
@@ -55,12 +55,12 @@ ACOOKIE=a
     - Cookie is set for Domain `a.com`. It will also be sent along with requests to `a.com:8080`. Note: if cookie `Secure` attribute is set, it will only be sent over HTTPS connections, so it would be sent to `https://a.com:8080/` but not `http://a.com:8080/`.
 - Sometimes the domain will start with a dot: `.foo.com`. This used to mean the cookie was also valid for sub-domains of `foo.com`, but RFC 6265 changed this rule so modern browsers ignore the leading dot and cookies are valid for subdomains without it.
 
-###Secure
+### Secure
 - If the Secure attribute of a cookie is set, the user-agent should only send that cookie over HTTPS and never over cleartext HTTP.
   - Note: localhost can an exception. When connecting to localhost, `Secure` cookies will be sent over HTTP as well in Firefox.
 - In practice, the Secure attribute should pretty much always be set.
 
-###HttpOnly
+### HttpOnly
 - The HttpOnly attribute of a cookie tells the user agent that this cookie cannot be accessed through client side scripts.
 Example:
 ```
@@ -91,7 +91,7 @@ Cookie: HOC=foo
 ```
 - (?) Note: if the XHR request is cross-domain, cookies may or may not be sent depending on the cookie's `SameSite` attribute. See `SameSite` section.
 
-###SameSite
+### SameSite
 - If a cookie SameSite setting is 'None', it must also have the Secure flag (this is currently not strictly enforced, but will be in the future).
 
 
