@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <body>
+    <script>
+        function reqListener () {
+            console.log("Status: " + this.status + " " + this.statusText);
+        }
+        
+        var urls = ['https://a.com/image.jpg', 'https://sub.a.com/image.jpg', 'https://b.com/image.jpg',
+            'https://a.com/data.json', 'https://sub.a.com/data.json', 'https://b.com/data.json'];
+
+        for (var i = 0; i < urls.length; i++) {
+            let r = new XMLHttpRequest();
+            r.open("GET", urls[i]);
+            r.onreadystatechange = function() {
+                if (r.readyState == XMLHttpRequest.DONE) {
+                    console.log("Status: " + r.status + " " + r.statusText);
+                    if (r.status == 200) {
+                        console.log("Response text: " + r.responseText);
+                    }
+                }
+            }
+            r.send();
+        }
+    </script>
+    </body>
+</html>

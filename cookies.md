@@ -46,7 +46,7 @@ ACOOKIE=a
 
 ### Domain
 - The Domain attribute specifies which hosts a user agent may send the cookie to.
-- If Domain is unspecified, it defaults to the same host that set the cookie, excluding subdomains.
+- If Domain is unspecified, it defaults to the same host that set the cookie, excluding subdomains. This is called a "host-only" cookie.
 - If Domain is specified, then subdomains are always included. Example:
     - `Domain: foo.com` cookies may be sent with requests to `bar.foo.com`
 - Cookies cannot be set for domains that don't match the current domain, including sub-domains of the current domain. They _can_ be set for "super-domains" of the current domain. Examples:
@@ -94,4 +94,38 @@ Cookie: HOC=foo
 ### SameSite
 - If a cookie SameSite setting is 'None', it must also have the Secure flag (this is currently not strictly enforced, but will be in the future).
 
+
+// Reading images cross-site via JS
+Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://b.com/image.jpg. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
+
+// on b.com
+// document.cookie = "BCOOKIE=b;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/;SameSite=None;Secure";
+
+Assume the following test conditons:
+The following entries in `/etc/hosts`:
+```
+127.0.0.1 a.com
+127.0.0.1 sub.a.com
+127.0.0.1 b.com
+```
+
+HTTP server listening on localhost (see `http_serve.py`)
+
+
+### Firefox HTTPS
+
+|                         | None | Lax | Strict |
+| ----------------------- | ---  | --- | ---    |
+| `form` submit           | Yes  | Yes^^  | No  |
+| `img` tag               | Yes  | No | No |
+| `iframe` source         | Yes  | No | No |
+| clicking an `href` link | Yes  | Yes | No |
+| XHR request             | No^ | No | No |
+| `meta` refresh          | Yes  | Yes | No |
+| `window.location.href`   | Yes | Yes | No |
+| `window.location.replace`| Yes | Yes | No |
+
+^Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://b.com/image-js.jpg. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
+
+^^ Cookie sent for GET, not for POST
 
