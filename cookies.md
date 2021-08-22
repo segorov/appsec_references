@@ -92,27 +92,44 @@ Cookie: HOC=foo
 - (?) Note: if the XHR request is cross-domain, cookies may or may not be sent depending on the cookie's `SameSite` attribute. See `SameSite` section.
 
 ### SameSite
+- The SameSite attribute declares if a cookie should be restricted to a first-party/same-site context.
+- What constitutes "first-party"? Example:
+    - When loading a page on domain a.com, assets on the page from b.com are considered third-party. Assets from sub-domains such as sub.a.com are considered first-party.
+- Valid values for SameSite are `None`, `Lax`, and `Strict`. The general meaning of the 3 settings:
+    - `None`: Cookies will be sent in all contexts. Same behavior as before SameSite attribute existed.
+    - `Lax`: Cookies will only be sent when navigating to a site (ex. clicking a link to b.com on a page hosted on a.com, but not loading an image from b.com on a page hosted on a.com).
+    - `Strict`: Cookies will only be sent in a first-party context. Ex. a page hosted on a.com will only send cookies for other assets on a.com or subdomains of a.com.
+    - A deep dive into specific types of embedded/fetched/linked content and page interactions how the SameSite settings apply follows.
+- What about different ports? Does SameSite apply to cookies set for a.com to content from a.com:8080? This is apparently a grey area and behavior may be browser-specific. Example in Firefox:
+    - Cookie with domain a.com is also sent with requests to a.com:8080. This also applies in a third-party context: b.com domain cookies are sent with requests for b.com:8080 content embedded on a page on a.com assuming SameSite checks pass.
+- In recent browser versions, if a SameSite attribute is not explicitly specified, the default values is "Lax".
 - If a cookie SameSite setting is 'None', it must also have the Secure flag (this is currently not strictly enforced, but will be in the future).
 
-
-// Reading images cross-site via JS
-Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://b.com/image.jpg. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
-
-// on b.com
-// document.cookie = "BCOOKIE=b;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/;SameSite=None;Secure";
-
-Assume the following test conditons:
-The following entries in `/etc/hosts`:
+#### SameSite Test Scenarios
+Here is a matrix describing how browsers (tested on Firefox and Chrome) will apply SameSite policy to different types of content/user interactions.
+Test scenario is as follows:
+- Basic HTTP server listening on localhost port 443 with self-signed TLS certificate installed
+- The following entries in `/etc/hosts`:
 ```
 127.0.0.1 a.com
 127.0.0.1 sub.a.com
 127.0.0.1 b.com
 ```
 
-HTTP server listening on localhost (see `http_serve.py`)
+- Cookies set manually for each domain with different SameSite settings for each test scenario (Note: domain _must_ be specified explicitly for cookies to be sent to sub-domains of the current domain; otherwise they are restricted to the exact domain only.)
+```
+document.cookie = "ACOOKIE=a;Domain=a.com;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/;SameSite=None;Secure
+document.cookie = "SUBCOOKIE=sub;Domain=sub.a.com;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/;SameSite=None;Secure
+document.cookie = "BCOOKIE=b;Domain=b.com;expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/;SameSite=None;Secure
+```
 
+Each test scenario is captured in its own HTML file (see tests directory).
+To run each test, load the page via its https://a.com URL and observe whether a cookie is sent with requests for assets on b.com and sub.a.com..
+Note: it's recommended to disable browser cache when running the tests. A simple way to do this is to reload a page using Ctrl/Cmd + Shift + R.
 
-### Firefox HTTPS
+#### SameSite Test Results Matrix
+
+Each test scenario was ran with each of the 3 SameSite settings for the `b.com` cookie. The following table summarizes whether the `b.com` cookie is sent with each type of third-party `b.com` content embedded on an `a.com` page or action taken with a `b.com` destination (ex. submitting a form to `b.com` from `a.com`).
 
 |                         | None | Lax | Strict |
 | ----------------------- | ---  | --- | ---    |
@@ -125,7 +142,9 @@ HTTP server listening on localhost (see `http_serve.py`)
 | `window.location.href`   | Yes | Yes | No |
 | `window.location.replace`| Yes | Yes | No |
 
-^Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://b.com/image-js.jpg. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
+^The request is made, but reading the response is not allowed: Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://b.com/image-js.jpg. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
+^^ Cookie is sent with GET requests, but not wit POST requests.
 
-^^ Cookie sent for GET, not for POST
+Subdomain results: subdomains are treated as first-party as far as cookie SameSite restrictions go. This means that all requests for `sub.a.com` and `a.com` content on `sub.a.com` pages contained both `ACOOKIE` and `SUBCOOKIE` and all embedded content/actions taken with a `sub.a.com` source/destination on `a.com` pages contained `SUBCOOKIE`.
+
 
